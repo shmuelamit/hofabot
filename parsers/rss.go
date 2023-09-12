@@ -1,15 +1,16 @@
 package parsers
 
 import (
+	"log"
 	"time"
 
 	"github.com/mmcdole/gofeed"
 )
 
-func GetRSSChannel(url string, refresh time.Duration) (chan Show, chan bool) {
+func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {
 	show := make(chan Show)
 	stop := make(chan bool)
-	ticker := time.NewTicker(refresh)
+	ticker := time.NewTicker(config.Refresh)
 
 	go func() {
 		for {
@@ -18,17 +19,17 @@ func GetRSSChannel(url string, refresh time.Duration) (chan Show, chan bool) {
 				return
 			case tick := <-ticker.C:
 				fp := gofeed.NewParser()
-				feed, err := fp.ParseURL(url)
+				feed, err := fp.ParseURL(config.Url)
 				if err != nil {
-					panic("gofeed failed to parse url")
+					log.Fatal("gofeed failed to parse url")
 				}
 
 				for _, item := range feed.Items {
-					if item.PublishedParsed.After(tick.Add(-refresh)) {
+					if item.PublishedParsed.After(tick.Add(-config.Refresh)) {
 						show <- Show{
-							name: item.Title,
-							url:  item.Link,
-							desc: item.Content,
+							Name: item.Title,
+							Url:  item.Link,
+							Desc: item.Content,
 						}
 					}
 				}

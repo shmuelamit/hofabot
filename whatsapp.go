@@ -3,15 +3,22 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"parsers"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
-	"os"
+	"google.golang.org/protobuf/proto"
 )
 
-func get_client() *whatsmeow.Client {
+func GetClient() *whatsmeow.Client {
 	dbLog := waLog.Stdout("Database", "INFO", true)
 
 	container, err := sqlstore.New("sqlite3", "file:whatsapp.db?_foreign_keys=on", dbLog)
@@ -52,4 +59,54 @@ func get_client() *whatsmeow.Client {
 	}
 
 	return client
+}
+
+func SendShow(client *whatsmeow.Client, group *types.GroupInfo, show parsers.Show) {
+	text := show.String()
+	var msg *waProto.Message
+
+	if len(show.Image) != 0 {
+		res, err := http.Get(show.Image)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer res.Body.Close()
+
+		var data []byte
+		res.Body.Read(data)
+
+		uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaImage)
+		if err != nil {
+			log.Fatalf("Failed to upload file: %v", err)
+		}
+
+		msg = &waProto.Message{ImageMessage: &waProto.ImageMessage{
+			Caption:       &text,
+			Url:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(http.DetectContentType(data)),
+			FileEncSha256: uploaded.FileEncSHA256,
+			FileSha256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(data))),
+		}}
+	} else {
+		msg = &waProto.Message{Conversation: &text}
+	}
+	_, err := client.SendMessage(context.Background(), group.JID, msg)
+	if err != nil {
+		log.Fatalf("Error sending image message: %v", err)
+	}
+
+	log.Println("SENT MESSAGE ------------------------- ")
+}
+
+func GetOwnedGroup(groups []*types.GroupInfo, client_jid types.JID, name string) *types.GroupInfo {
+	for _, group := range groups {
+		if group.OwnerJID == client_jid && group.GroupName.Name == name {
+			return group
+		}
+	}
+
+	return nil
 }

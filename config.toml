@@ -1,0 +1,26 @@
+# [[Rss]]
+# group = "לבונטין 7"
+# url = "https://levontin7.com/events/rss"
+# refresh = "1h"
+
+[[rss]]
+group = "אוזן"
+url = "https://ozentlv.com/event/rss"
+refresh = "1h"
+
+# Define scraper by jquery selectors
+[[generic]]
+group = "בארבי"
+url = "https://www.barby.co.il"
+title = ".inlineDefNameBig, .inlineDefName"
+desc = ".show1-description"
+image = ".showCatMainImgNP, .showCatMainImg"
+refresh = "1h"
+
+[[generic]]
+group = "תדר"
+url = "https://www.teder.fm/"
+title = ".item-future .title"
+desc = ".content-body"
+image = ".content-image-container img"
+refresh = "1h"

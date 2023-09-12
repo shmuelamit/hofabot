@@ -13,7 +13,7 @@
     {
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
-          packages = with pkgs; [ go sqlite ];
+          packages = with pkgs; [ go gopls sqlite ];
         };
       });
     };
