@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -66,19 +67,19 @@ func SendShow(client *whatsmeow.Client, group *types.GroupInfo, show parsers.Sho
 	var msg *waProto.Message
 
 	if len(show.Image) != 0 {
-		res, err := http.Get(show.Image)
-		if err != nil {
-			log.Fatal(err)
-		}
+		println("Sending image", show.Image)
+		res := parsers.GetRequest(show.Image)
 		defer res.Body.Close()
 
-		var data []byte
-		res.Body.Read(data)
+		data, err := io.ReadAll(res.Body)
 
 		uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaImage)
+		println("uploaded file")
 		if err != nil {
 			log.Fatalf("Failed to upload file: %v", err)
 		}
+
+		println(http.DetectContentType(data), len(data))
 
 		msg = &waProto.Message{ImageMessage: &waProto.ImageMessage{
 			Caption:       &text,
@@ -95,7 +96,7 @@ func SendShow(client *whatsmeow.Client, group *types.GroupInfo, show parsers.Sho
 	}
 	_, err := client.SendMessage(context.Background(), group.JID, msg)
 	if err != nil {
-		log.Fatalf("Error sending image message: %v", err)
+		log.Fatalf("Error sending message: %v", err)
 	}
 
 	log.Println("SENT MESSAGE ------------------------- ")

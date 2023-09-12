@@ -66,9 +66,15 @@ func GetRequest(web_url string) *http.Response {
 
 func GetImageSource(img *goquery.Selection) string {
 	if img.Is("div") {
-		// TODO handle this levontin shit
-		// src, _ := img.Attr("css")
-		return ""
+		css, exists := img.Attr("style")
+		if !exists {
+			log.Fatalln("no css attribute")
+		}
+
+		css_noprefix := css[strings.Index(css, "background-image: url(")+len("background-image: url("):]
+		image_url := css_noprefix[:strings.Index(css_noprefix, ")")]
+
+		return image_url
 	} else {
 		return img.AttrOr("data-original", img.AttrOr("src", ""))
 	}

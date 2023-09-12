@@ -2,6 +2,8 @@ package parsers
 
 import (
 	"fmt"
+	"log"
+	"net/url"
 	"time"
 )
 
@@ -13,11 +15,17 @@ type Show struct {
 }
 
 func (s Show) String() string {
-	return fmt.Sprintf("%s\n--------\n%s\n\n%s", s.Name, s.Url, s.Desc)
+	url, err := url.PathUnescape(s.Url)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fmt.Sprintf("🎵 *%s* 🎵\n*%s*\n\n%s", s.Name, url, s.Desc)
 }
 
 type RSSConfig struct {
 	Url     string
+	Image   string
 	Refresh time.Duration
 }
 

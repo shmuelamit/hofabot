@@ -12,7 +12,7 @@ import (
 )
 
 // Barby is annoying, can also get YT url but useless in my opinion
-func getBarbyDescription(event_url string, config GenericConfig) (string, string) {
+func getBarbyDescription(event_url string, desc_sel string, image_sel string) (string, string) {
 	res := GetRequest(event_url)
 	defer res.Body.Close()
 
@@ -25,7 +25,7 @@ func getBarbyDescription(event_url string, config GenericConfig) (string, string
 		log.Fatal(err)
 	}
 
-	image := doc.Find(config.Image).First()
+	image := doc.Find(image_sel).First()
 
 	parsed_url, err := url.Parse(event_url)
 	if err != nil {
@@ -55,10 +55,10 @@ func getBarbyDescription(event_url string, config GenericConfig) (string, string
 	return desc, GetImageSource(image)
 }
 
-func GenericDescriptionHook(event_url string, config GenericConfig) (string, string, bool) {
-	switch config.Url {
+func GetDescriptionHook(event_url string, website string, desc_sel string, image_sel string) (string, string, bool) {
+	switch website {
 	case "https://www.barby.co.il":
-		event_url, config := getBarbyDescription(event_url, config)
+		event_url, config := getBarbyDescription(event_url, desc_sel, image_sel)
 		return event_url, config, true
 	default:
 		return "", "", false

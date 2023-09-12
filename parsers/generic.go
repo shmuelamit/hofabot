@@ -10,7 +10,7 @@ import (
 
 func getGenericDescription(event_url string, config GenericConfig) (string, string) {
 	// Sometimes websites do stupid stuff and I handle it stupidly as well
-	if desc, image, hooked := GenericDescriptionHook(event_url, config); hooked {
+	if desc, image, hooked := GetDescriptionHook(event_url, config.Url, config.Desc, config.Image); hooked {
 		return desc, image
 	}
 
@@ -32,7 +32,7 @@ func getGenericDescription(event_url string, config GenericConfig) (string, stri
 	return desc, GetImageSource(image)
 }
 
-func getGenericShows(config GenericConfig) []Show {
+func GetGenericShows(config GenericConfig) []Show {
 	res := GetRequest(config.Url)
 	defer res.Body.Close()
 
@@ -91,14 +91,15 @@ func GetGenericChannel(config GenericConfig) (chan Show, chan bool) {
 	ticker := time.NewTicker(config.Refresh)
 
 	go func() {
-		last_shows := getGenericShows(config)
+		last_shows := GetGenericShows(config)
 
 		for {
+			println("TICK", config.Url)
 			select {
 			case <-stop:
 				return
 			case <-ticker.C:
-				current_shows := getGenericShows(config)
+				current_shows := GetGenericShows(config)
 				new_shows := ShowsDifference(current_shows, last_shows)
 
 				for _, show := range new_shows {
