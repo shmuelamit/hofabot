@@ -54,7 +54,8 @@ func GetGenericShows(config GenericConfig) []Show {
 		}
 
 		// Find relevant href
-		link, exists := title.ParentsFiltered("a[href]").Attr("href")
+		link, exists := title.Parents().Has("a[href]").First().Find("a[href]").Attr("href")
+		println(title.Parents().Has("a[href]").Length())
 		if !exists {
 			log.Fatal(err)
 		}

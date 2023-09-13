@@ -26,3 +26,12 @@ title = ".item-future .title"
 desc = ".content-body"
 image = ".content-image-container img"
 refresh = "5m"
+
+[[generic]]
+group = "צוללת צהובה"
+url = "https://yellowsubmarine.org.il/event/"
+title = ".b-artist__info-title"
+link = ".abs-link"
+desc = ".b-event-info__body"
+image = ".responsive"
+refresh = "5s"
