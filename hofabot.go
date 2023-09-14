@@ -24,17 +24,22 @@ type Config struct {
 	}
 }
 
+// func RegisterChat(config Config, client *whatsmeow.Client, groups)
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	var config Config
 	_, err := toml.DecodeFile(CONFIG_FILE, &config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error decoding config file", err)
 	}
 
 	client := GetClient()
-	groups, _ := client.GetJoinedGroups()
+	groups, err := client.GetJoinedGroups()
+	if err != nil {
+		log.Fatal("Error getting cleint groups", err)
+	}
 
 	for _, config := range config.Rss {
 		channel, _ := parsers.GetRSSChannel(config.RSSConfig)
@@ -60,8 +65,6 @@ func main() {
 		if group == nil {
 			log.Fatal("no group named " + config.Group)
 		}
-
-		println("init", config.Url)
 
 		go func() {
 			for {

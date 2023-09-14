@@ -8,33 +8,38 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func getGenericDescription(event_url string, config GenericConfig) (string, string) {
+func getGenericDescription(event_url string, config GenericConfig) (string, string, error) {
 	// Sometimes websites do stupid stuff and I handle it stupidly as well
-	if desc, image, hooked := GetDescriptionHook(event_url, config.Url, config.Desc, config.Image); hooked {
-		return desc, image
+	if desc, image, err := GetDescriptionHook(event_url, config.Url, config.Desc, config.Image); err != nil {
+		return desc, image, nil
 	}
 
-	res := GetRequest(event_url)
+	res, err := GetRequest(event_url)
 	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	if err != nil {
+		log.Println("GET request error", err)
+		return "", "", err
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("goquery parsing error", err)
+		return "", "", err
 	}
 
 	image := doc.Find(config.Image).First()
 	desc := HTMLToText(doc.Find(config.Desc).First())
 
-	return desc, GetImageSource(image)
+	return desc, GetImageSource(image), nil
 }
 
-func GetGenericShows(config GenericConfig) []Show {
-	res := GetRequest(config.Url)
+func GetGenericShows(config GenericConfig) ([]Show, error) {
+	res, err := GetRequest(config.Url)
 	defer res.Body.Close()
+	if err != nil {
+		log.Println("GET request error", err)
+		return nil, err
+	}
 
 	if res.StatusCode != 200 {
 		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
@@ -72,7 +77,10 @@ func GetGenericShows(config GenericConfig) []Show {
 
 		resolved_link := parsed_url.ResolveReference(parsed_link).String()
 
-		desc, image := getGenericDescription(resolved_link, config)
+		desc, image, err := getGenericDescription(resolved_link, config)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		shows = append(shows, Show{
 			Name:  title.Text(),
@@ -82,7 +90,7 @@ func GetGenericShows(config GenericConfig) []Show {
 		})
 	})
 
-	return shows
+	return shows, nil
 }
 
 func GetGenericChannel(config GenericConfig) (chan Show, chan bool) {
@@ -92,7 +100,10 @@ func GetGenericChannel(config GenericConfig) (chan Show, chan bool) {
 	ticker := time.NewTicker(config.Refresh)
 
 	go func() {
-		last_shows := GetGenericShows(config)
+		last_shows, err := GetGenericShows(config)
+		if err != nil {
+			log.Fatal("Failed to get initial shows", err, config)
+		}
 
 		for {
 			println("TICK", config.Url)
@@ -100,7 +111,12 @@ func GetGenericChannel(config GenericConfig) (chan Show, chan bool) {
 			case <-stop:
 				return
 			case <-ticker.C:
-				current_shows := GetGenericShows(config)
+				current_shows, err := GetGenericShows(config)
+				if err != nil {
+					log.Println("Failed to get shows, skipping", err, config)
+					continue
+				}
+
 				new_shows := ShowsDifference(current_shows, last_shows)
 
 				for _, show := range new_shows {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"errors"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -40,16 +41,18 @@ func HTMLToText(sel *goquery.Selection) string {
 	}), "\n\n")
 }
 
-func GetRequest(web_url string) *http.Response {
+func GetRequest(web_url string) (*http.Response, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", web_url, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Failed to init GET request", err)
+		return nil, err
 	}
 
 	parsed_url, err := url.Parse(web_url)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Failed to parse url", err)
+		return nil, err
 	}
 
 	req.Header.Add("Host", parsed_url.Host)
@@ -58,10 +61,15 @@ func GetRequest(web_url string) *http.Response {
 
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Failed to send GET request", err)
+		return nil, err
 	}
 
-	return res
+	if res.StatusCode != 200 {
+		return nil, errors.New("Status Code Error")
+	}
+
+	return res, nil
 }
 
 func GetImageSource(img *goquery.Selection) string {

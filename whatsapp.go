@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"parsers"
+	"errors"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mdp/qrterminal/v3"
@@ -62,41 +63,56 @@ func GetClient() *whatsmeow.Client {
 	return client
 }
 
+func getImageMsg(client *whatsmeow.Client, image string, text string) (*waProto.Message, error) {
+	if len(image) == 0 {
+		return nil, errors.New("Image url empty")
+	}
+
+	res, err := parsers.GetRequest(image)
+	defer res.Body.Close()
+	if err != nil {
+		log.Println("GET request error", err)
+		return nil, err
+	}
+
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Println("Failed to upload file: %v", err)
+		return nil, err
+	}
+
+	uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaImage)
+	if err != nil {
+		log.Println("Error uploading message", err)
+		return nil, err
+	}
+
+	return &waProto.Message{ImageMessage: &waProto.ImageMessage{
+		Caption:       &text,
+		Url:           proto.String(uploaded.URL),
+		DirectPath:    proto.String(uploaded.DirectPath),
+		MediaKey:      uploaded.MediaKey,
+		Mimetype:      proto.String(http.DetectContentType(data)),
+		FileEncSha256: uploaded.FileEncSHA256,
+		FileSha256:    uploaded.FileSHA256,
+		FileLength:    proto.Uint64(uint64(len(data))),
+	}}, nil
+}
+
 func SendShow(client *whatsmeow.Client, group *types.GroupInfo, show parsers.Show) {
 	text := show.String()
-	var msg *waProto.Message
+	msg := &waProto.Message{Conversation: &text}
 
-	if len(show.Image) != 0 {
-		println("Sending image", show.Image)
-		res := parsers.GetRequest(show.Image)
-		defer res.Body.Close()
-
-		data, err := io.ReadAll(res.Body)
-
-		uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaImage)
-		println("uploaded file")
-		if err != nil {
-			log.Fatalf("Failed to upload file: %v", err)
-		}
-
-		println(http.DetectContentType(data), len(data))
-
-		msg = &waProto.Message{ImageMessage: &waProto.ImageMessage{
-			Caption:       &text,
-			Url:           proto.String(uploaded.URL),
-			DirectPath:    proto.String(uploaded.DirectPath),
-			MediaKey:      uploaded.MediaKey,
-			Mimetype:      proto.String(http.DetectContentType(data)),
-			FileEncSha256: uploaded.FileEncSHA256,
-			FileSha256:    uploaded.FileSHA256,
-			FileLength:    proto.Uint64(uint64(len(data))),
-		}}
+	if imagemsg, err := getImageMsg(client, show.Image, text); err == nil {
+		msg = imagemsg
 	} else {
-		msg = &waProto.Message{Conversation: &text}
+		log.Println("Failed to create image message")
 	}
+
 	_, err := client.SendMessage(context.Background(), group.JID, msg)
 	if err != nil {
-		log.Fatalf("Error sending message: %v", err)
+		log.Println("Error sending message", err)
 	}
 
 	log.Println("SENT MESSAGE ------------------------- ")

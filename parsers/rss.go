@@ -9,17 +9,17 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-func getRSSImage(event_url string, config RSSConfig) string {
+func getRSSImage(event_url string, config RSSConfig) (string, error) {
 	// Sometimes websites do stupid stuff and I handle it stupidly as well
-	if _, image, hooked := GetDescriptionHook(event_url, config.Url, "", config.Image); hooked {
-		return image
+	if _, image, err := GetDescriptionHook(event_url, config.Url, "", config.Image); err != nil {
+		return image, nil
 	}
 
-	res := GetRequest(event_url)
+	res, err := GetRequest(event_url)
 	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	if err != nil {
+		log.Println("GET request error", err)
+		return "", err
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -29,7 +29,7 @@ func getRSSImage(event_url string, config RSSConfig) string {
 
 	image := doc.Find(config.Image).First()
 
-	return GetImageSource(image)
+	return GetImageSource(image), nil
 }
 
 func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {
@@ -55,7 +55,10 @@ func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {
 						img := ""
 
 						if config.Image != "" {
-							img = getRSSImage(item.Link, config)
+							img, err = getRSSImage(item.Link, config)
+							if err != nil {
+								img = ""
+							}
 						}
 
 						content, err := goquery.NewDocumentFromReader(strings.NewReader(item.Content))
