@@ -2,13 +2,13 @@
 group = "לבונטין 7"
 url = "https://levontin7.com/events/rss"
 image = "div.fat-event-thumb"
-refresh = "5m"
+refresh = "45m"
 
 [[rss]]
 group = "אוזן"
 url = "https://ozentlv.com/event/rss"
 image = ".ozen-section_event__body-thumbnail img"
-refresh = "5m"
+refresh = "45m"
 
 # Define scraper by jquery selectors
 [[generic]]
@@ -17,7 +17,7 @@ url = "https://www.barby.co.il"
 title = ".inlineDefNameBig, .inlineDefName"
 desc = ".show1-description"
 image = ".showCatMainImgNP, .showCatMainImg"
-refresh = "5m"
+refresh = "45m"
 
 [[generic]]
 group = "תדר"
@@ -25,7 +25,7 @@ url = "https://www.teder.fm/"
 title = ".item-future .title"
 desc = ".content-body"
 image = ".content-image-container img"
-refresh = "5m"
+refresh = "45m"
 
 [[generic]]
 group = "צוללת צהובה"
@@ -34,4 +34,4 @@ title = ".b-artist__info-title"
 link = ".abs-link"
 desc = ".b-event-info__body"
 image = ".responsive"
-refresh = "5s"
+refresh = "45m"
