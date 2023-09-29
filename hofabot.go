@@ -27,7 +27,7 @@ type Config struct {
 // func RegisterChat(config Config, client *whatsmeow.Client, groups)
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Llongfile)
 
 	var config Config
 	_, err := toml.DecodeFile(CONFIG_FILE, &config)

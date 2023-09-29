@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"errors"
 	"log"
 	"net/url"
 	"time"
@@ -30,7 +31,12 @@ func getGenericDescription(event_url string, config GenericConfig) (string, stri
 	image := doc.Find(config.Image).First()
 	desc := HTMLToText(doc.Find(config.Desc).First())
 
-	return desc, GetImageSource(image), nil
+	img_source, err := GetImageSource(image)
+	if err != nil {
+		return "", "", err
+	}
+
+	return desc, img_source, nil
 }
 
 func GetGenericShows(config GenericConfig) ([]Show, error) {
@@ -42,12 +48,14 @@ func GetGenericShows(config GenericConfig) ([]Show, error) {
 	}
 
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		log.Printf("status code error: %d %s\n", res.StatusCode, res.Status)
+		return nil, errors.New("Status code error")
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("failed to parse generic show body", err)
+		return nil, err
 	}
 
 	shows := []Show{}
@@ -55,31 +63,35 @@ func GetGenericShows(config GenericConfig) ([]Show, error) {
 	// Can parallelize, won't
 	doc.Find(config.Title).Each(func(i int, title *goquery.Selection) {
 		if len(title.Text()) == 0 {
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 
 		// Find relevant href
 		link, exists := title.Parents().Has("a[href]").First().Find("a[href]").Attr("href")
-		println(title.Parents().Has("a[href]").Length())
 		if !exists {
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 
 		parsed_link, err := url.Parse(link)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 
 		parsed_url, err := url.Parse(config.Url)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 
 		resolved_link := parsed_url.ResolveReference(parsed_link).String()
 
 		desc, image, err := getGenericDescription(resolved_link, config)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 
 		shows = append(shows, Show{

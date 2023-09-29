@@ -24,12 +24,18 @@ func getRSSImage(event_url string, config RSSConfig) (string, error) {
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error parsing rss image", err)
+		return "", err
 	}
 
 	image := doc.Find(config.Image).First()
 
-	return GetImageSource(image), nil
+	img_source, err := GetImageSource(image)
+	if err != nil {
+		return "", err
+	}
+
+	return img_source, nil
 }
 
 func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {

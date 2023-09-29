@@ -1,11 +1,11 @@
 package parsers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
-	"errors"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -72,18 +72,19 @@ func GetRequest(web_url string) (*http.Response, error) {
 	return res, nil
 }
 
-func GetImageSource(img *goquery.Selection) string {
+func GetImageSource(img *goquery.Selection) (string, error) {
 	if img.Is("div") {
 		css, exists := img.Attr("style")
 		if !exists {
-			log.Fatalln("no css attribute")
+			log.Println("no css attribute")
+			return "", errors.New("No css attribute")
 		}
 
 		css_noprefix := css[strings.Index(css, "background-image: url(")+len("background-image: url("):]
 		image_url := css_noprefix[:strings.Index(css_noprefix, ")")]
 
-		return image_url
+		return image_url, nil
 	} else {
-		return img.AttrOr("data-original", img.AttrOr("src", ""))
+		return img.AttrOr("data-original", img.AttrOr("src", "")), nil
 	}
 }

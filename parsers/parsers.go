@@ -17,7 +17,7 @@ type Show struct {
 func (s Show) String() string {
 	url, err := url.PathUnescape(s.Url)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error esacping show path", err)
 	}
 
 	return fmt.Sprintf("🎵 *%s* 🎵\n*%s*\n\n%s", s.Name, url, s.Desc)
