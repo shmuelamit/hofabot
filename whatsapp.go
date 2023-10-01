@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"parsers"
-	"errors"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mdp/qrterminal/v3"
@@ -65,6 +65,7 @@ func GetClient() *whatsmeow.Client {
 
 func getImageMsg(client *whatsmeow.Client, image string, text string) (*waProto.Message, error) {
 	if len(image) == 0 {
+		log.Println("Image url empty")
 		return nil, errors.New("Image url empty")
 	}
 
@@ -75,10 +76,9 @@ func getImageMsg(client *whatsmeow.Client, image string, text string) (*waProto.
 		return nil, err
 	}
 
-
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to upload file: %v", err)
+		log.Println("Failed to upload file", err)
 		return nil, err
 	}
 

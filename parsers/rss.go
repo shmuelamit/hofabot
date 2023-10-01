@@ -11,7 +11,7 @@ import (
 
 func getRSSImage(event_url string, config RSSConfig) (string, error) {
 	// Sometimes websites do stupid stuff and I handle it stupidly as well
-	if _, image, err := GetDescriptionHook(event_url, config.Url, "", config.Image); err != nil {
+	if _, image, err := GetDescriptionHook(event_url, config.Url, "", config.Image); err == nil {
 		return image, nil
 	}
 

@@ -11,7 +11,7 @@ import (
 
 func getGenericDescription(event_url string, config GenericConfig) (string, string, error) {
 	// Sometimes websites do stupid stuff and I handle it stupidly as well
-	if desc, image, err := GetDescriptionHook(event_url, config.Url, config.Desc, config.Image); err != nil {
+	if desc, image, err := GetDescriptionHook(event_url, config.Url, config.Desc, config.Image); err == nil {
 		return desc, image, nil
 	}
 
