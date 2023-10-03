@@ -53,7 +53,8 @@ func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {
 				fp := gofeed.NewParser()
 				feed, err := fp.ParseURL(config.Url)
 				if err != nil {
-					log.Fatal("gofeed failed to parse url")
+					log.Println("gofeed failed to parse url", config.Url)
+					continue
 				}
 
 				for _, item := range feed.Items {
@@ -67,15 +68,18 @@ func GetRSSChannel(config RSSConfig) (chan Show, chan bool) {
 							}
 						}
 
+						var desc = "No description for today :("
 						content, err := goquery.NewDocumentFromReader(strings.NewReader(item.Content))
 						if err != nil {
-							log.Fatal(err)
+							log.Println("error parsing rss feed", err, "skipping item", item)
+						} else {
+							desc = HTMLToText(content.Selection)
 						}
 
 						show <- Show{
 							Name:  item.Title,
 							Url:   item.Link,
-							Desc:  HTMLToText(content.Selection),
+							Desc:  desc,
 							Image: img,
 						}
 					}
